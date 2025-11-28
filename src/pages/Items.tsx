@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Plus, Search, Edit, Trash2, X, Filter } from 'lucide-react';
-import { getItems, createItem, getCategories, Item, Category } from '../api/services';
+import { getItems, createItem, updateItem, deleteItem, getCategories, Item, Category } from '../api/services';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
 interface ItemFormData {
     name: string;
     price: number;
+    margin: number;
     quantity: number;
     reorder_level: number;
     category_id: number;
@@ -20,8 +21,9 @@ const Items = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<number | 'all'>('all');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingItem, setEditingItem] = useState<Item | null>(null);
 
-    const { register, handleSubmit, reset, formState: { errors } } = useForm<ItemFormData>();
+    const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<ItemFormData>();
 
     const fetchData = async () => {
         try {
@@ -49,21 +51,64 @@ const Items = () => {
     });
 
     const onSubmit = async (data: ItemFormData) => {
+        console.log('onSubmit called', data);
         try {
-            await createItem({
+            const payload = {
                 ...data,
                 price: Number(data.price),
+                margin: Number(data.margin),
                 quantity: Number(data.quantity),
                 reorder_level: Number(data.reorder_level),
                 category_id: Number(data.category_id)
-            });
-            toast.success('Item created successfully');
+            };
+
+            if (editingItem) {
+                console.log('Updating item', editingItem.id, payload);
+                await updateItem(editingItem.id, payload);
+                toast.success('Item updated successfully');
+            } else {
+                await createItem(payload);
+                toast.success('Item created successfully');
+            }
             setIsModalOpen(false);
+            setEditingItem(null);
             reset();
             fetchData();
         } catch (error) {
-            toast.error('Failed to create item');
+            toast.error(editingItem ? 'Failed to update item' : 'Failed to create item');
         }
+    };
+
+    const handleEdit = (item: Item) => {
+        console.log('handleEdit called', item);
+        setEditingItem(item);
+        setValue('name', item.name);
+        setValue('price', item.price);
+        setValue('margin', item.margin || 0);
+        setValue('quantity', item.quantity);
+        setValue('reorder_level', item.reorder_level);
+        setValue('category_id', item.category_id);
+        setIsModalOpen(true);
+    };
+
+    const handleDelete = async (id: number) => {
+        console.log('handleDelete called', id);
+        if (window.confirm('Are you sure you want to delete this item?')) {
+            try {
+                console.log('Deleting item', id);
+                await deleteItem(id);
+                toast.success('Item deleted successfully');
+                fetchData();
+            } catch (error) {
+                toast.error('Failed to delete item');
+            }
+        }
+    };
+
+    const openModal = () => {
+        setEditingItem(null);
+        reset();
+        setIsModalOpen(true);
     };
 
     if (loading) return <div className="p-8 text-center">Loading...</div>;
@@ -73,7 +118,7 @@ const Items = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h1 className="text-2xl font-bold text-gray-800">Items Management</h1>
                 <button
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={openModal}
                     className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                     <Plus className="w-5 h-5 mr-2" />
@@ -117,6 +162,7 @@ const Items = () => {
                                 <th className="px-6 py-4 font-medium">Name</th>
                                 <th className="px-6 py-4 font-medium">Category</th>
                                 <th className="px-6 py-4 font-medium">Price</th>
+                                <th className="px-6 py-4 font-medium">Margin</th>
                                 <th className="px-6 py-4 font-medium">Stock</th>
                                 <th className="px-6 py-4 font-medium">Status</th>
                                 <th className="px-6 py-4 font-medium text-right">Actions</th>
@@ -135,6 +181,7 @@ const Items = () => {
                                         <td className="px-6 py-4 font-medium text-gray-900">{item.name}</td>
                                         <td className="px-6 py-4 text-gray-600">{item.category?.name || '-'}</td>
                                         <td className="px-6 py-4 text-gray-900">${item.price.toFixed(2)}</td>
+                                        <td className="px-6 py-4 text-gray-900">{item.margin || 0}%</td>
                                         <td className="px-6 py-4 text-gray-900">{item.quantity}</td>
                                         <td className="px-6 py-4">
                                             <span className={clsx(
@@ -147,10 +194,16 @@ const Items = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <button className="text-blue-600 hover:text-blue-800 mr-3">
+                                            <button
+                                                onClick={() => handleEdit(item)}
+                                                className="text-blue-600 hover:text-blue-800 mr-3"
+                                            >
                                                 <Edit className="w-4 h-4" />
                                             </button>
-                                            <button className="text-red-600 hover:text-red-800">
+                                            <button
+                                                onClick={() => handleDelete(item.id)}
+                                                className="text-red-600 hover:text-red-800"
+                                            >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
                                         </td>
@@ -167,7 +220,7 @@ const Items = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
                         <div className="flex justify-between items-center p-6 border-b">
-                            <h2 className="text-xl font-bold text-gray-800">Add New Item</h2>
+                            <h2 className="text-xl font-bold text-gray-800">{editingItem ? 'Edit Item' : 'Add New Item'}</h2>
                             <button onClick={() => setIsModalOpen(false)} className="text-gray-500 hover:text-gray-700">
                                 <X className="w-6 h-6" />
                             </button>
@@ -193,6 +246,18 @@ const Items = () => {
                                     />
                                 </div>
                                 <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Margin (%)</label>
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        {...register('margin', { required: 'Margin is required', min: 0 })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
                                     <input
                                         type="number"
@@ -200,9 +265,18 @@ const Items = () => {
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     />
                                 </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Reorder Level</label>
+                                    <input
+                                        type="number"
+                                        {...register('reorder_level', { required: 'Required', min: 0 })}
+                                        defaultValue={10}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                                     <select
@@ -214,15 +288,6 @@ const Items = () => {
                                             <option key={cat.id} value={cat.id}>{cat.name}</option>
                                         ))}
                                     </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Reorder Level</label>
-                                    <input
-                                        type="number"
-                                        {...register('reorder_level', { required: 'Required', min: 0 })}
-                                        defaultValue={10}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
                                 </div>
                             </div>
 
@@ -238,7 +303,7 @@ const Items = () => {
                                     type="submit"
                                     className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
                                 >
-                                    Create Item
+                                    {editingItem ? 'Update Item' : 'Create Item'}
                                 </button>
                             </div>
                         </form>

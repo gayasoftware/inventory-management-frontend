@@ -4,6 +4,7 @@ export interface Item {
     id: number;
     name: string;
     price: number;
+    margin: number;
     quantity: number;
     reorder_level: number;
     category_id: number;
@@ -37,6 +38,16 @@ export const getItems = async () => {
 
 export const createItem = async (data: Omit<Item, 'id' | 'category'>) => {
     const response = await client.post<Item>('/items/', data);
+    return response.data;
+};
+
+export const updateItem = async (id: number, data: Omit<Item, 'id' | 'category'>) => {
+    const response = await client.put<Item>(`/items/${id}`, data);
+    return response.data;
+};
+
+export const deleteItem = async (id: number) => {
+    const response = await client.delete<Item>(`/items/${id}`);
     return response.data;
 };
 

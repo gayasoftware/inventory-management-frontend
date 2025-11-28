@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { AlertTriangle, Package, TrendingUp, DollarSign } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Line, Legend } from 'recharts';
+import { AlertTriangle, Package, TrendingUp, DollarSign, Percent } from 'lucide-react';
 import { getItems, getTransactions, Item, Transaction } from '../api/services';
 import clsx from 'clsx';
 
@@ -58,6 +58,26 @@ const Dashboard = () => {
             sales: totalSales
         };
     });
+
+    // Top Selling Items Data
+    const itemSales = transactions
+        .filter(t => t.type === 'sale')
+        .reduce((acc, t) => {
+            acc[t.item_id] = (acc[t.item_id] || 0) + t.quantity;
+            return acc;
+        }, {} as Record<number, number>);
+
+    const topItemsData = Object.entries(itemSales)
+        .map(([itemId, quantity]) => {
+            const item = items.find(i => i.id === Number(itemId));
+            return {
+                name: item?.name || 'Unknown',
+                quantity: quantity,
+                margin: item?.margin || 0
+            };
+        })
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 5);
 
     return (
         <div className="space-y-6">
@@ -120,6 +140,28 @@ const Dashboard = () => {
                                 <Tooltip />
                                 <Bar dataKey="sales" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                             </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Top Items Chart */}
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <Percent className="w-5 h-5 mr-2 text-purple-600" />
+                        Top Selling Items & Return %
+                    </h2>
+                    <div className="h-80">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <ComposedChart data={topItemsData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                <XAxis dataKey="name" />
+                                <YAxis yAxisId="left" orientation="left" stroke="#3b82f6" />
+                                <YAxis yAxisId="right" orientation="right" stroke="#8b5cf6" unit="%" />
+                                <Tooltip />
+                                <Legend />
+                                <Bar yAxisId="left" dataKey="quantity" name="Units Sold" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                                <Line yAxisId="right" type="monotone" dataKey="margin" name="Return %" stroke="#8b5cf6" strokeWidth={2} />
+                            </ComposedChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
