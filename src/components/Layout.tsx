@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Package, ArrowRightLeft, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Package, ArrowRightLeft, LogOut, Menu, X, ShoppingCart, FileText, User } from 'lucide-react';
 import { useState } from 'react';
 import clsx from 'clsx';
 
@@ -15,12 +15,31 @@ const Layout = () => {
         navigate('/login');
     };
 
-    const navItems = [
-        { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-        { path: '/items', label: 'Items', icon: Package },
-        { path: '/categories', label: 'Categories', icon: Package },
-        { path: '/transactions', label: 'Transactions', icon: ArrowRightLeft },
-    ];
+    // Define navigation items based on user role with hierarchical permissions
+    const getNavItems = () => {
+        const baseItems = [];
+
+        // All authenticated users can shop, manage orders, and update profile
+        baseItems.push(
+            { path: '/shop', label: 'Shop', icon: ShoppingCart },
+            { path: '/orders', label: 'Orders', icon: FileText },
+            { path: '/profile', label: 'Profile', icon: User }
+        );
+
+        // Staff and Admin get additional management features
+        if (user?.role === 'staff' || user?.role === 'admin') {
+            baseItems.splice(2, 0,  // Insert after orders
+                { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+                { path: '/items', label: 'Items', icon: Package },
+                { path: '/categories', label: 'Categories', icon: Package },
+                { path: '/transactions', label: 'Transactions', icon: ArrowRightLeft }
+            );
+        }
+
+        return baseItems;
+    };
+
+    const navItems = getNavItems();
 
     return (
         <div className="flex h-screen bg-gray-50">

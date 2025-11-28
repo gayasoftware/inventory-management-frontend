@@ -1,5 +1,14 @@
 import client from './client';
 
+export interface User {
+    id: number;
+    username: string;
+    role: string;
+    full_name?: string;
+    email?: string;
+    address?: string;
+}
+
 export interface Item {
     id: number;
     name: string;
@@ -90,3 +99,55 @@ export const getTransactions = async () => {
 // I need to check if there is an endpoint to get transactions.
 // Looking at previous file views, I didn't see a GET /transactions endpoint in routers/transactions.py.
 // I might need to add it to the backend to support the Dashboard sales chart.
+
+export interface OrderItem {
+    id: number;
+    item_id: number;
+    quantity: number;
+    price: number;
+    order_id: number;
+}
+
+export interface Order {
+    id: number;
+    customer_id: number;
+    status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+    order_date: string;
+    delivery_date?: string;
+    total_amount: number;
+    delivery_address: string;
+    order_items: OrderItem[];
+}
+
+export const createOrder = async (data: {
+    customer_id: number;
+    delivery_address: string;
+    order_items: {
+        item_id: number;
+        quantity: number;
+        price: number;
+    }[];
+}) => {
+    const response = await client.post<Order>('/orders/', data);
+    return response.data;
+};
+
+export const getOrders = async () => {
+    const response = await client.get<Order[]>('/orders/');
+    return response.data;
+};
+
+export const updateOrderStatus = async (orderId: number, status: string) => {
+    const response = await client.put(`/orders/${orderId}/status`, { status });
+    return response.data;
+};
+
+export const getMe = async () => {
+    const response = await client.get<User>('/auth/me');
+    return response.data;
+};
+
+export const updateUser = async (userData: Partial<User>) => {
+    const response = await client.put<User>('/auth/me', userData);
+    return response.data;
+};

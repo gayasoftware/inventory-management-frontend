@@ -1,9 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getMe } from '../api/services';
 
 interface User {
+    id: number;
     username: string;
     role: string;
+    full_name?: string;
+    email?: string;
+    address?: string;
 }
 
 interface AuthContextType {
@@ -22,20 +27,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (token) {
-            // Ideally, fetch user details from backend using token
-            // For now, we decode or just assume logged in.
-            // Let's fetch user info if we had an endpoint, but we don't have /me yet.
-            // We'll decode the token if it's JWT, or just set a dummy user for now if we can't decode easily without a library.
-            // Actually, let's just assume if token exists, we are authenticated.
-            // We can store username/role in localStorage too for simplicity in this MVP.
-            const storedUser = localStorage.getItem('user');
-            if (storedUser) {
-                setUser(JSON.parse(storedUser));
+        const fetchUser = async () => {
+            if (token) {
+                try {
+                    const userData = await getMe();
+                    setUser(userData);
+                    localStorage.setItem('user', JSON.stringify(userData));
+                } catch (error) {
+                    console.error('Failed to fetch user:', error);
+                    // If /me fails, user might be invalid, clear data
+                    setToken(null);
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                }
+            } else {
+                setUser(null);
             }
-        } else {
-            setUser(null);
-        }
+        };
+        fetchUser();
     }, [token]);
 
     const login = (newToken: string) => {
