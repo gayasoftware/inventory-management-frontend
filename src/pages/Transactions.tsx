@@ -28,7 +28,7 @@ const Transactions = () => {
                 getTransactions()
             ]);
             setItems(itemsData);
-            setTransactions(transactionsData.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
+            setTransactions(transactionsData.sort((a: Transaction, b: Transaction) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
         } catch (error) {
             toast.error('Failed to fetch data');
         } finally {
@@ -113,7 +113,7 @@ const Transactions = () => {
 
                                 {selectedItem && (
                                     <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
-                                        <p>Current Price: <span className="font-semibold">${selectedItem.price.toFixed(2)}</span></p>
+                                        <p>Current Price: <span className="font-semibold">INR {selectedItem.price.toFixed(2)}</span></p>
                                         <p>Current Stock: <span className="font-semibold">{selectedItem.quantity}</span></p>
                                     </div>
                                 )}
@@ -197,7 +197,7 @@ const Transactions = () => {
                                                     </td>
                                                     <td className="px-6 py-4 font-medium text-gray-900">{item?.name || `Item #${t.item_id}`}</td>
                                                     <td className="px-6 py-4">{t.quantity}</td>
-                                                    <td className="px-6 py-4">${(t.price * t.quantity).toFixed(2)}</td>
+                                                    <td className="px-6 py-4">INR {(t.price * t.quantity).toFixed(2)}</td>
                                                     <td className="px-6 py-4 text-gray-500">
                                                         {new Date(t.timestamp).toLocaleDateString()}
                                                     </td>

@@ -180,7 +180,7 @@ const Items = () => {
                                     <tr key={item.id} className="border-b hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4 font-medium text-gray-900">{item.name}</td>
                                         <td className="px-6 py-4 text-gray-600">{item.category?.name || '-'}</td>
-                                        <td className="px-6 py-4 text-gray-900">${item.price.toFixed(2)}</td>
+                                        <td className="px-6 py-4 text-gray-900">INR {item.price.toFixed(2)}</td>
                                         <td className="px-6 py-4 text-gray-900">{item.margin || 0}%</td>
                                         <td className="px-6 py-4 text-gray-900">{item.quantity}</td>
                                         <td className="px-6 py-4">

@@ -1,15 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getMe } from '../api/services';
-
-interface User {
-    id: number;
-    username: string;
-    role: string;
-    full_name?: string;
-    email?: string;
-    address?: string;
-}
+import { getMe, User } from '../api/services';
 
 interface AuthContextType {
     user: User | null;
@@ -45,15 +36,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
         };
         fetchUser();
-    }, [token]);
+    }, [token]); // Removed navigate from deps since we don't force navigation anymore
 
     const login = (newToken: string) => {
         localStorage.setItem('token', newToken);
         setToken(newToken);
 
-        // Decode token to get user info (simplified: we'll fetch or expect it)
-        // For this implementation, let's assume we get user info or we just set it.
-        // We will modify the login page to set user info.
+        // We'll fetch user info in the useEffect, which will trigger navigation
     };
 
     const logout = () => {

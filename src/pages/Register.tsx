@@ -4,10 +4,7 @@ import client from '../api/client';
 import toast from 'react-hot-toast';
 
 interface RegisterFormData {
-    username: string;
-    email: string;
-    full_name: string;
-    address: string;
+    phone: string;
     password: string;
 }
 
@@ -17,7 +14,16 @@ const Register = () => {
 
     const onSubmit = async (data: RegisterFormData) => {
         try {
-            await client.post('/auth/register', data);
+            // Generate auto username from phone number
+            const autoUsername = `user_${data.phone.replace(/[^\d]/g, '')}`;
+
+            const registrationData = {
+                phone_number: data.phone,  // Ensure backend expects phone_number
+                password: data.password,
+                username: autoUsername
+            };
+
+            await client.post('/auth/register', registrationData);
             toast.success('Registration successful! Please login.');
             navigate('/login');
         } catch (error: any) {
@@ -31,34 +37,12 @@ const Register = () => {
                 <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Register</h2>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Username</label>
+                        <label className="block text-sm font-medium text-gray-700">Phone Number</label>
                         <input
-                            {...register('username', { required: true })}
+                            {...register('phone', { required: true })}
                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
+                            placeholder="Enter your phone number"
                             required
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Email</label>
-                        <input
-                            type="email"
-                            {...register('email', { required: true })}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Full Name</label>
-                        <input
-                            {...register('full_name')}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Address</label>
-                        <input
-                            {...register('address')}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
                         />
                     </div>
                     <div>
@@ -67,6 +51,7 @@ const Register = () => {
                             type="password"
                             {...register('password', { required: true })}
                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
+                            placeholder="Create a password"
                             required
                         />
                     </div>
